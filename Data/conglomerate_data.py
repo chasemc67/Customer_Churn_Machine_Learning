@@ -15,6 +15,19 @@ filenames = ['2015-Aug.csv',
              '2016-Mar.csv',
              '2016-May.csv']
 
+months = dict(zip(['Jan',
+                   'Feb',
+                   'Mar',
+                   'Apr',
+                   'May',
+                   'Jun',
+                   'Jul',
+                   'Aug',
+                   'Sep',
+                   'Oct',
+                   'Nov',
+                   'Dec'], range(1, 13)))
+
 data = list()
 
 # add header
@@ -28,7 +41,8 @@ for filename in filenames:
     with open(filename, 'r') as infile:
         rows = [row.strip().split(',') for row in infile][1:]
     for row in rows:
-        row += [filename.split('-')[0], filename[:- 4].split('-')[1]]
+        row += [filename.split('-')[0],
+                str(months[filename[:- 4].split('-')[1]])]
         row = [entry.strip() for entry in header]
     data += rows
 
