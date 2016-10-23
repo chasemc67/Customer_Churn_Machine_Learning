@@ -53,6 +53,8 @@ for row in data[1:]:
             row[i] = str(np.nan)
     if float(row[- 6]) == 0:
         row[- 6] = str(np.nan)
+for i in range(len(data)):
+    data[i] = data[i][:27] + data[i][39:]
 
 # write data
 with open('data.csv', 'w') as outfile:
