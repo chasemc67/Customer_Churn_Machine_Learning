@@ -2,16 +2,28 @@
 
 import numpy as np
 
-filenames = ['2015-Aug.csv',
+filenames = ['2014-Dec.csv',
+             '2014-Nov.csv',
+             '2014-Oct.csv',
+             '2014-Sep.csv',
+             '2015-Apr.csv',
+             '2015-Aug.csv',
              '2015-Dec.csv',
+             '2015-Feb.csv',
+             '2015-Jan.csv',
              '2015-Jul.csv',
              '2015-Jun.csv',
+             '2015-Mar.csv',
+             '2015-May.csv',
              '2015-Nov.csv',
              '2015-Oct.csv',
              '2015-Sep.csv',
              '2016-Apr.csv',
+             '2016-Aug.csv',
              '2016-Feb.csv',
              '2016-Jan.csv',
+             '2016-Jul.csv',
+             '2016-Jun.csv',
              '2016-Mar.csv',
              '2016-May.csv']
 
