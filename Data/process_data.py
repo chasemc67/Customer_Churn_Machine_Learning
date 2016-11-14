@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
+import math
 import numpy as np
+import random
 
 filenames = ['2014-Dec.csv',
              '2014-Nov.csv',
@@ -46,7 +48,6 @@ data = list()
 with open(filenames[0], 'r') as infile:
     header = infile.readline().strip().split(',') + ['year', 'month']
     header = [entry.strip() for entry in header]
-    data.append(header)
 
 # add data
 for filename in filenames:
@@ -59,7 +60,7 @@ for filename in filenames:
     data += rows
 
 # clean data
-for row in data[1:]:
+for row in data:
     for i, entry in enumerate(row):
         if entry == '':
             row[i] = str(np.nan)
@@ -67,8 +68,31 @@ for row in data[1:]:
         row[- 6] = str(np.nan)
 for i in range(len(data)):
     data[i] = data[i][:27] + data[i][39:]
+header = header[:27] + header[39:]
+
+# make temporal holdout
+temporal_holdout = [row for row in data
+                    if (str(row[- 2]) == '2016') and
+                       ((str(row[- 1]) == str(months['Mar'])) or
+                        (str(row[- 1]) == str(months['May'])))]
+data = [row for row in data if row not in temporal_holdout]
+temporal_holdout = [header] + temporal_holdout
+
+# make random holdout
+random_holdout = random.sample(data, math.ceil(len(data) * 0.2))
+data = [row for row in data if row not in random_holdout]
+random_holdout = [header] + random_holdout
+
+# make train set
+train_set = [header] + data
 
 # write data
-with open('data.csv', 'w') as outfile:
-    for row in data:
+with open('temporal_holdout.csv', 'w') as outfile:
+    for row in temporal_holdout:
+        outfile.write(','.join(row) + '\n')
+with open('random_holdout.csv', 'w') as outfile:
+    for row in random_holdout:
+        outfile.write(','.join(row) + '\n')
+with open('train_set.csv', 'w') as outfile:
+    for row in train_set:
         outfile.write(','.join(row) + '\n')
