@@ -1,4 +1,9 @@
+# load data in with np.loadtxt or csv.dictreader
+# or pd.read_csv
+
+
 import numpy as np 		# numpy for nan values
+import pandas as pd
 import random			# random to create crossfold validation
 
 #from sklearn.neural_network import MLPClassifier	# neaural nets
@@ -45,6 +50,7 @@ def preprocessData(data):
 		### NPS Score
 		## change to score of promoter, detractor, indifferent. Null values are set to indifferent
 		rowList = preprocessNPSScore(rowList, dataMap)
+		
 		### time_since_action values
 		## For each in {client_created, invoice_created, quote_created, basic_task_completed, payment_recieved, epayments_used, } :
 		## 		Add boolean value for "hasDoneInLastWeek"
@@ -73,14 +79,42 @@ def verifyData(trainData):
 	return
 
 
+# Trying something different here. Processing the data
+# With Pandas
+def processDataPandas(fileName):
+	dataFile = pd.read_csv(filename, index_col=None, header=0)
+	for i in range(dataFile.shape[0]):
+
+		# process for NPS score
+		mapDict = {"det": -1, "pas": 0, "prom": 1}
+		if np.isnan(dataFile.xs(i)["last_nps_score"]):
+			print(dataFile.xs(i))
+			dataFile.set_value(i, 'last_nps_score', mapDict["pas"])
+		elif dataFile.xs(i)["last_nps_score"] <= 6:
+			dataFile.set_value(i, 'last_nps_score', mapDict["det"])
+		elif dataFile.xs(i)["last_nps_score"] >= 6:
+			dataFile.set_value(i, 'last_nps_score', mapDict["prom"])
+		else:
+			dataFile.set_value(i, 'last_nps_score', mapDict["pas"])
+
+		# Add column
+		# dataFile["newCol"] = 0
+
+		# Remove Column 
+		# del dataFile["newCol"]
+
+		
+
+
 def main():
-	trainData = open(filename, 'r')
-	(dataSet, dataMap) = preprocessData(trainData)
-	for row in dataSet:
+	processDataPandas(filename)
+	# trainData = open(filename, 'r')
+	# (dataSet, dataMap) = preprocessData(trainData)
+	# for row in dataSet:
 		#print("===")
 		#print(row)
 		#print("nps_score: " + row[dataMap.index("last_nps_score")])
-		return
+	return
 
 	# trainData = removeUnwantedEntries(trainData)
 
