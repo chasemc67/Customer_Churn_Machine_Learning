@@ -68,6 +68,7 @@ for row in data:
         row[- 6] = str(np.nan)
 for i in range(len(data)):
     data[i] = data[i][:27] + data[i][39:]
+header = header[:27] + header[39:]
 
 # make temporal holdout
 temporal_holdout = [row for row in data
