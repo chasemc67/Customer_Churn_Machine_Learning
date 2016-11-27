@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 from scipy import stats as st
-from sklearn import preprocessing, tree
+from sklearn import preprocessing
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import KFold
 import argparse
 import numpy as np
@@ -40,8 +41,12 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--depth',
                         type=int,
-                        help='maximum depth of tree',
-                        default=5)
+                        help='maximum depth of tree in random forest',
+                        default=7)
+    parser.add_argument('-e', '--estimators',
+                        type=int,
+                        help='number of estimators in random forest',
+                        default=12)
     parser.add_argument('-f', '--folds',
                         type=int,
                         help='number of folds for data')
@@ -70,24 +75,14 @@ def main():
         siginfo_message = 'Running fold {} of {}'.format(i, folds)
         X, y = split_data(data[train, :], header)
         X_test, y_test = split_data(data[test, :], header)
-        clf = tree.DecisionTreeClassifier(criterion='entropy',
-                                          max_depth=args['depth'])
+        clf = RandomForestClassifier(
+            n_estimators=args['estimators'],
+            criterion='entropy',
+            max_depth=args['depth'])
         clf.fit(X, y)
         correct[i - 1] = clf.score(X_test, y_test)
     print("mean={0:0.4f}; sem={1:0.4f}".format(correct.mean(),
                                                st.sem(correct)))
-
-    # output full model
-    clf = tree.DecisionTreeClassifier(criterion='entropy',
-                                      max_depth=args['depth'])
-    clf.fit(* split_data(data, header))
-    with open('tree.dot', 'w') as outfile:
-        feature_names = header[:header.index('renewed')] + \
-            header[header.index('renewed') + 1:]
-        tree.export_graphviz(clf,
-                             feature_names=feature_names,
-                             filled=True,
-                             out_file=outfile)
 
 if __name__ == '__main__':
     # setup numpy
