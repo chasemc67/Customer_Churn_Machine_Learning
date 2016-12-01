@@ -9,8 +9,11 @@ import numpy as np
 import pandas as pd
 import signal
 
+TARGET_NAME = 'renewed'
+
 
 def clean_data(data):
+    data = data[data['cancellation_request'] == False]
     data = data.drop('cancellation_request', axis=1)
     data = data.drop('id', axis=1)
     return data
@@ -19,18 +22,15 @@ def clean_data(data):
 def encode_data(data):
     header = data.columns.values.tolist()
     matrix = np.zeros(data.shape, dtype=np.float64)
-    encoders = list()
     for i, name in enumerate(list(data.columns.values)):
-        if data[name].dtype in [int, float]:
+        if data[name].dtype in [int, float, bool]:
             matrix[:, i] = data.values[:, i]
-            encoders.append(None)
         else:
             encoder = preprocessing.LabelEncoder()
             matrix[:, i] = encoder.fit_transform(
                 [str(i) for i in data.values[:, i]])
-            encoders.append(encoder)
     matrix[np.isnan(matrix)] = - 1
-    return matrix.astype(np.float64), header, encoders
+    return matrix, header
 
 
 def get_data(filename):
@@ -54,7 +54,7 @@ def parse_args():
 
 
 def split_data(data, header):
-    target_index = header.index('renewed')
+    target_index = header.index(TARGET_NAME)
     y = data[:, target_index]
     X = np.delete(data, target_index, axis=1)
     return X, y
@@ -64,7 +64,7 @@ def main():
     global siginfo_message
     args = parse_args()
     siginfo_message = 'Loading data ...'
-    data, header, encoders = get_data('Data/train_set.csv')
+    data, header = get_data('Data/train_set.csv')
 
     # train model
     folds = data.shape[0] if args['folds'] is None else args['folds']
@@ -77,8 +77,8 @@ def main():
         X_test, y_test = split_data(data[test, :], header)
         clf = RandomForestClassifier(
             n_estimators=args['estimators'],
-            criterion='entropy',
-            max_depth=args['depth'])
+            max_depth=args['depth'],
+            class_weight='balanced_subsample')
         clf.fit(X, y)
         correct[i - 1] = clf.score(X_test, y_test)
     print("mean={0:0.4f}; sem={1:0.4f}".format(correct.mean(),

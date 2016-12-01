@@ -5,6 +5,7 @@ import pandas as pd
 
 def main():
     data = pd.read_csv('Data/train_set.csv')
+    data = data[data['cancellation_request'] == False]
     majority_class = data['renewed'].mode()
     num_majority = len(data[data['renewed'] == int(majority_class)])
     print('Majority Classifier Accuracy: {0:0.4f}'.format(
