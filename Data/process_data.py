@@ -44,19 +44,41 @@ months = dict(zip(['Jan',
 
 data = list()
 
-# add header
+# get header
 with open(filenames[0], 'r') as infile:
-    header = infile.readline().strip().split(',') + ['year', 'month']
-    header = [entry.strip() for entry in header]
+    header = infile.readline().strip().split(',')
 
-# add data
+    # extract target
+    target = header[- 1]
+    header.pop()
+
+    # add month and year to header
+    header += ['year', 'month']
+
+    # append the target
+    header += [target]
+
+    # clean the header
+    header = [str(entry).strip() for entry in header]
+
+# get data
 for filename in filenames:
     with open(filename, 'r') as infile:
         rows = [row.strip().split(',') for row in infile][1:]
     for row in rows:
+        # extract target
+        target = row[- 1]
+        row.pop()
+
+        # add month and year to row
         row += [filename.split('-')[0],
                 str(months[filename[:- 4].split('-')[1]])]
-        row = [entry.strip() for entry in header]
+
+        # append the target
+        row += [target]
+
+        # clean the row
+        row = [str(entry).strip() for entry in row]
     data += rows
 
 # clean data
@@ -64,35 +86,41 @@ for row in data:
     for i, entry in enumerate(row):
         if entry == '':
             row[i] = str(np.nan)
-    if float(row[- 6]) == 0:
-        row[- 6] = str(np.nan)
-for i in range(len(data)):
-    data[i] = data[i][:27] + data[i][39:]
-header = header[:27] + header[39:]
 
 # make temporal holdout
-temporal_holdout = [row for row in data
-                    if (str(row[- 2]) == '2016') and
-                       ((str(row[- 1]) == str(months['Mar'])) or
-                        (str(row[- 1]) == str(months['May'])))]
+temporal_holdout = [
+    row for row in data
+    if (row[- 3] == '2016')
+    and (row[- 2] in [str(months['Mar']), str(months['May'])])]
 data = [row for row in data if row not in temporal_holdout]
-temporal_holdout = [header] + temporal_holdout
+temporal_holdout = [
+    row for row in temporal_holdout
+    if row[header.index('cancellation_request')].lower() == 'false']
+random.shuffle(temporal_holdout)
 
 # make random holdout
-random_holdout = random.sample(data, math.ceil(len(data) * 0.2))
+data_no_cancel = [
+    row for row in data
+    if row[header.index('cancellation_request')].lower() == 'false']
+random_holdout = random.sample(data_no_cancel,
+                               math.ceil(len(data_no_cancel) * 0.3))
+random.shuffle(random_holdout)
 data = [row for row in data if row not in random_holdout]
-random_holdout = [header] + random_holdout
 
 # make train set
-train_set = [header] + data
+train_set = data
+random.shuffle(data)
 
 # write data
 with open('temporal_holdout.csv', 'w') as outfile:
+    outfile.write(','.join(header) + '\n')
     for row in temporal_holdout:
         outfile.write(','.join(row) + '\n')
 with open('random_holdout.csv', 'w') as outfile:
+    outfile.write(','.join(header) + '\n')
     for row in random_holdout:
         outfile.write(','.join(row) + '\n')
 with open('train_set.csv', 'w') as outfile:
+    outfile.write(','.join(header) + '\n')
     for row in train_set:
         outfile.write(','.join(row) + '\n')
