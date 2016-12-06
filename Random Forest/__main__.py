@@ -13,8 +13,6 @@ TARGET_NAME = 'renewed'
 
 
 def clean_data(data):
-    data = data[data['cancellation_request'] == False]
-    data = data.drop('cancellation_request', axis=1)
     data = data.drop('id', axis=1)
     return data
 
@@ -30,11 +28,22 @@ def encode_data(data):
             matrix[:, i] = encoder.fit_transform(
                 [str(i) for i in data.values[:, i]])
     matrix[np.isnan(matrix)] = - 1
+    np.random.shuffle(matrix)
     return matrix, header
 
 
+def extract_target(data, header):
+    target_index = header.index(TARGET_NAME)
+    y = data[:, target_index]
+    X = np.delete(data, target_index, axis=1)
+    return X, y
+
+
 def get_data(filename):
-    return encode_data(clean_data(pd.read_csv(filename)))
+    train_only, data = split_data(clean_data(pd.read_csv(filename)))
+    train_only_matrix, _ = encode_data(train_only)
+    matrix, header = encode_data(data)
+    return train_only_matrix, matrix, header
 
 
 def parse_args():
@@ -53,33 +62,42 @@ def parse_args():
     return vars(parser.parse_args())
 
 
-def split_data(data, header):
-    target_index = header.index(TARGET_NAME)
-    y = data[:, target_index]
-    X = np.delete(data, target_index, axis=1)
-    return X, y
+def split_data(data):
+    true_data = data[data['cancellation_request'] == True]
+    true_data.drop('cancellation_request', axis=1)
+    false_data = data[data['cancellation_request'] == False]
+    false_data.drop('cancellation_request', axis=1)
+    return true_data, false_data
 
 
 def main():
     global siginfo_message
     args = parse_args()
     siginfo_message = 'Loading data ...'
-    data, header = get_data('Data/train_set.csv')
+    train_only_matrix, matrix, header = get_data('Data/train_set.csv')
 
-    # train model
-    folds = data.shape[0] if args['folds'] is None else args['folds']
+    # split train only data
+    X_train_only, y_train_only = extract_target(train_only_matrix, header)
+
+    # get cross validation error
+    folds = matrix.shape[0] if args['folds'] is None else args['folds']
     correct = np.zeros(folds)
-    i = 0
-    for train, test in KFold(n_splits=folds).split(data):
-        i += 1
-        siginfo_message = 'Running fold {} of {}'.format(i, folds)
-        X, y = split_data(data[train, :], header)
-        X_test, y_test = split_data(data[test, :], header)
+    for i, (train, test) in enumerate(KFold(n_splits=folds).split(matrix)):
+        siginfo_message = 'Running fold {} of {}'.format(i + 1, folds)
+
+        # make learner and train on train only data
         clf = RandomForestClassifier(
             n_estimators=args['estimators'],
             max_depth=args['depth'],
             class_weight='balanced_subsample')
+        clf.fit(X_train_only, y_train_only)
+
+        # train on cross validation train data
+        X, y = extract_target(matrix[train, :], header)
         clf.fit(X, y)
+
+        # get accuracy on test data
+        X_test, y_test = extract_target(matrix[test, :], header)
         correct[i - 1] = clf.score(X_test, y_test)
     print("mean={0:0.4f}; sem={1:0.4f}".format(correct.mean(),
                                                st.sem(correct)))
