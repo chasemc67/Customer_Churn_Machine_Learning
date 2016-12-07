@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 import signal
 
+from sklearn.neural_network import MLPClassifier
+
 TARGET_NAME = 'renewed'
 
 
@@ -27,7 +29,7 @@ def clean_data(data):
         else:
             data.set_value(i, 'last_nps_score', mapDict["pas"])
 
-    data = random_oversample(data)
+    #data = random_oversample(data)
     return data
 
 
@@ -88,7 +90,7 @@ def main():
     global siginfo_message
     args = parse_args()
     siginfo_message = 'Loading data ...'
-    train_only_matrix, matrix, header = get_data('Data/train_set.csv')
+    train_only_matrix, matrix, header = get_data('../Data/train_set.csv')
 
     # split train only data
     X_train_only, y_train_only = extract_target(train_only_matrix, header)
@@ -100,10 +102,7 @@ def main():
         siginfo_message = 'Running fold {} of {}'.format(i + 1, folds)
 
         # make learner and train on train only data
-        clf = RandomForestClassifier(
-            n_estimators=args['estimators'],
-            max_depth=args['depth'],
-            class_weight='balanced_subsample')
+        clf = MLPClassifier(solver='adam', hidden_layer_sizes=(60,30, 10), max_iter=10000, random_state=1)
         clf.fit(X_train_only, y_train_only)
 
         # train on cross validation train data
@@ -118,7 +117,7 @@ def main():
 
 if __name__ == '__main__':
     # setup numpy
-    np.seterr(all='raise')  # don't ignore errors
+    #np.seterr(all='raise')  # don't ignore errors
 
     # setup siginfo response system
     global siginfo_message
