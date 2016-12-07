@@ -139,7 +139,7 @@ def main():
         siginfo_message = 'Running fold {} of {}'.format(i, folds)
         X, y = split_data(data[train, :], header)
         X_test, y_test = split_data(data[test, :], header)
-        clf = MLPClassifier(solver='adam', hidden_layer_sizes=(50,30,10), max_iter=10000, random_state=1)
+        clf = MLPClassifier(solver='adam', hidden_layer_sizes=(60,30), max_iter=10000, random_state=1)
         clf.fit(X, y)
         correct[i - 1] = clf.score(X_test, y_test)
 
@@ -149,7 +149,7 @@ def main():
                                                st.sem(correct)))
 
     # output full model
-    clf = MLPClassifier(solver='adam', hidden_layer_sizes=(50,30,10), max_iter=10000, random_state=1)
+    clf = MLPClassifier(solver='adam', hidden_layer_sizes=(60,30), max_iter=10000, random_state=1)
     clf.fit(* split_data(data, header))
 
 if __name__ == '__main__':

@@ -102,7 +102,7 @@ def main():
         siginfo_message = 'Running fold {} of {}'.format(i + 1, folds)
 
         # make learner and train on train only data
-        clf = MLPClassifier(solver='adam', hidden_layer_sizes=(50,30,10), max_iter=10000, random_state=1)
+        clf = MLPClassifier(solver='adam', hidden_layer_sizes=(60,30, 10), max_iter=10000, random_state=1)
         clf.fit(X_train_only, y_train_only)
 
         # train on cross validation train data
