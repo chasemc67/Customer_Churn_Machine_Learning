@@ -91,7 +91,9 @@ for row in data:
 temporal_holdout = [
     row for row in data
     if (row[- 3] == '2016')
-    and (row[- 2] in [str(months['Mar']), str(months['May'])])]
+    and (row[- 2] in [str(months['Jul']),
+                      str(months['Mar']),
+                      str(months['May'])])]
 data = [row for row in data if row not in temporal_holdout]
 temporal_holdout = [
     row for row in temporal_holdout
