@@ -9,7 +9,6 @@ import pandas as pd
 import signal
 
 MAGIC_FEATURE = 'approx_days_since_any_user_login'
-MAGIC_FEATURE_THRESHOLD = 8.5
 TARGET_NAME = 'renewed'
 
 
@@ -52,6 +51,10 @@ def parse_args():
     parser.add_argument('-f', '--folds',
                         type=int,
                         help='number of folds for data')
+    parser.add_argument('-t', '--threshold',
+                        type=float,
+                        help='threshold for magic feature',
+                        default=8)
     return vars(parser.parse_args())
 
 
@@ -81,7 +84,7 @@ def main():
         # get accuracy on test data
         X_test, y_test = extract_target(matrix[test, :], header)
         prediction = X_test[:, header.index(MAGIC_FEATURE)] <= \
-            MAGIC_FEATURE_THRESHOLD
+            args['threshold']
         correct[i - 1] = sum(prediction == y_test) / len(y_test)
     print("mean={0:0.4f}; sem={1:0.4f}".format(correct.mean(),
                                                st.sem(correct)))
