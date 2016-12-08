@@ -89,6 +89,7 @@ def main():
     folds = matrix.shape[0] if args['folds'] is None else args['folds']
     correct = np.zeros(folds)
     for i, (train, test) in enumerate(KFold(n_splits=folds).split(matrix)):
+        print i
         siginfo_message = 'Running fold {} of {}'.format(i + 1, folds)
 
         # make learner and train on train only data
