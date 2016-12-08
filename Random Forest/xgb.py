@@ -2,7 +2,10 @@
 
 from scipy import stats as st
 from sklearn import preprocessing
-from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
+from sklearn.metrics import precision_score, \
+    recall_score, confusion_matrix, classification_report, \
+    accuracy_score, f1_score
 from sklearn.model_selection import KFold
 import argparse
 import numpy as np
@@ -14,20 +17,6 @@ TARGET_NAME = 'renewed'
 
 def clean_data(data):
     data = data.drop('id', axis=1)
-     # Categorize NPS score
-    mapDict = {"det": -1, "pas": 0, "prom": 1}
-    for i in range(data.shape[0]):
-        if np.isnan(data.xs(i)["last_nps_score"]):
-            #print(data.xs(i))
-            data.set_value(i, 'last_nps_score', mapDict["pas"])
-        elif data.xs(i)["last_nps_score"] <= 6:
-            data.set_value(i, 'last_nps_score', mapDict["det"])
-        elif data.xs(i)["last_nps_score"] >= 6:
-            data.set_value(i, 'last_nps_score', mapDict["prom"])
-        else:
-            data.set_value(i, 'last_nps_score', mapDict["pas"])
-
-    data = random_oversample(data)
     return data
 
 
@@ -88,7 +77,7 @@ def main():
     global siginfo_message
     args = parse_args()
     siginfo_message = 'Loading data ...'
-    train_only_matrix, matrix, header = get_data('Data/train_set.csv')
+    train_only_matrix, matrix, header = get_data('../Data/train_set.csv')
 
     # split train only data
     X_train_only, y_train_only = extract_target(train_only_matrix, header)
@@ -96,15 +85,22 @@ def main():
     # get cross validation error
     folds = matrix.shape[0] if args['folds'] is None else args['folds']
     correct = np.zeros(folds)
+    prediction = np.zeros(matrix.shape[0])
+
     for i, (train, test) in enumerate(KFold(n_splits=folds).split(matrix)):
         siginfo_message = 'Running fold {} of {}'.format(i + 1, folds)
 
         # make learner and train on train only data
-        clf = RandomForestClassifier(
-            n_estimators=args['estimators'],
-            max_depth=args['depth'],
-            class_weight='balanced_subsample')
-        clf.fit(X_train_only, y_train_only)
+        clf = XGBClassifier(max_depth = int(28.69913921001481),
+             learning_rate = 0.40013713455754879,
+             n_estimators = int( 155.884),
+             gamma = 4.2011661695729288,
+             min_child_weight = 5.63170567674676,
+             max_delta_step = 0.189935746,
+             subsample = 0.79624446388978387,
+             colsample_bytree = 0.46023574766629138,
+             objective = "binary:logistic")
+        clf.fit(X_train_only, y_train_only, eval_metric = 'auc')
 
         # train on cross validation train data
         X, y = extract_target(matrix[train, :], header)
@@ -112,9 +108,17 @@ def main():
 
         # get accuracy on test data
         X_test, y_test = extract_target(matrix[test, :], header)
+        prediction[test] = clf.predict(X_test)
         correct[i - 1] = clf.score(X_test, y_test)
     print("mean={0:0.4f}; sem={1:0.4f}".format(correct.mean(),
                                                st.sem(correct)))
+    _,y=extract_target(matrix,header)
+    print ('Accuracy:', accuracy_score(y, prediction))
+    print ('F1 score:', f1_score(y, prediction))
+    print ('Recall:', recall_score(y, prediction))
+    print ('Precision:', precision_score(y, prediction))
+    print ('\n clasification report:\n', classification_report(y,prediction))
+    print ('\n confussion matrix:\n',confusion_matrix(y, prediction))
 
 if __name__ == '__main__':
     # setup numpy
