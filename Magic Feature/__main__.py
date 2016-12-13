@@ -2,6 +2,9 @@
 
 from scipy import stats as st
 from sklearn import preprocessing
+from sklearn.metrics import precision_score, \
+    recall_score, confusion_matrix, classification_report, \
+    accuracy_score, f1_score, roc_auc_score
 from sklearn.model_selection import KFold
 import argparse
 import numpy as np
@@ -70,7 +73,7 @@ def main():
     global siginfo_message
     args = parse_args()
     siginfo_message = 'Loading data ...'
-    train_only_matrix, matrix, header = get_data('Data/train_set.csv')
+    train_only_matrix, matrix, header = get_data('../Data/train_set.csv')
 
     # split train only data
     X_train_only, y_train_only = extract_target(train_only_matrix, header)
@@ -78,6 +81,8 @@ def main():
     # get cross validation error
     folds = matrix.shape[0] if args['folds'] is None else args['folds']
     correct = np.zeros(folds)
+    predict = np.zeros(matrix.shape[0])
+
     for i, (train, test) in enumerate(KFold(n_splits=folds).split(matrix)):
         siginfo_message = 'Running fold {} of {}'.format(i + 1, folds)
 
@@ -85,9 +90,19 @@ def main():
         X_test, y_test = extract_target(matrix[test, :], header)
         prediction = X_test[:, header.index(MAGIC_FEATURE)] <= \
             args['threshold']
+        predict[test] = X_test[:, header.index(MAGIC_FEATURE)] <= \
+            args['threshold']
         correct[i - 1] = sum(prediction == y_test) / len(y_test)
     print("mean={0:0.4f}; sem={1:0.4f}".format(correct.mean(),
                                                st.sem(correct)))
+    _,y=extract_target(matrix,header)
+    print ('Accuracy:', accuracy_score(y, predict))
+    print ('F1 score:', f1_score(y, predict))
+    print ('Recall:', recall_score(y, predict))
+    print ('Precision:', precision_score(y, predict))
+    print ('AUC:', roc_auc_score(y, predict))
+    print ('\n clasification report:\n', classification_report(y,predict))
+    print ('\n confussion matrix:\n',confusion_matrix(y, predict))
 
 if __name__ == '__main__':
     # setup numpy
