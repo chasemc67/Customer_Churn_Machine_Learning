@@ -13,6 +13,8 @@ import json
 import numpy as np
 import pandas as pd
 
+MAGIC_FEATURE = 'approx_days_since_any_user_login'
+MAGIC_THRESHOLD = 8
 TARGET_NAME = 'renewed'
 
 
@@ -53,17 +55,10 @@ def get_data(filename):
 def main():
     results = dict()
 
-    # train learner
-    train_matrix, header = get_data('Data/train_set.csv')
-    X_train, y_train = extract_target(train_matrix, header)
-    clf = tree.DecisionTreeClassifier(criterion='entropy',
-                                      max_depth=5)
-    clf.fit(X_train, y_train)
-
     # test on random holdout
-    test_matrix, _ = get_data('Data/random_holdout.csv')
+    test_matrix, header = get_data('Data/random_holdout.csv')
     X_test, y_test = extract_target(test_matrix, header)
-    prediction = clf.predict(X_test)
+    prediction = X_test[:, header.index(MAGIC_FEATURE)] <= MAGIC_THRESHOLD
     result = dict()
     result['accuracy'] = accuracy_score(y_test, prediction)
     result['confusion_matrix'] = confusion_matrix(y_test, prediction).tolist()
@@ -77,7 +72,7 @@ def main():
     # test on temporal holdout
     test_matrix, _ = get_data('Data/temporal_holdout.csv')
     X_test, y_test = extract_target(test_matrix, header)
-    prediction = clf.predict(X_test)
+    prediction = X_test[:, header.index(MAGIC_FEATURE)] <= MAGIC_THRESHOLD
     result = dict()
     result['accuracy'] = accuracy_score(y_test, prediction)
     result['confusion_matrix'] = confusion_matrix(y_test, prediction).tolist()
@@ -93,15 +88,6 @@ def main():
                      sort_keys=True,
                      indent=4,
                      separators=(',', ': ')))
-
-
-    with open('tree.dot', 'w') as outfile:
-        feature_names = header[:header.index('renewed')] + \
-            header[header.index('renewed') + 1:]
-        tree.export_graphviz(clf,
-                             feature_names=feature_names,
-                             filled=True,
-                             out_file=outfile)
 
 if __name__ == '__main__':
     # setup numpy

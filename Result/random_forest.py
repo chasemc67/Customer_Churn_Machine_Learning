@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 from scipy import stats as st
-from sklearn import preprocessing, tree
+from sklearn import preprocessing
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import \
     accuracy_score, \
     confusion_matrix, \
@@ -56,8 +57,10 @@ def main():
     # train learner
     train_matrix, header = get_data('Data/train_set.csv')
     X_train, y_train = extract_target(train_matrix, header)
-    clf = tree.DecisionTreeClassifier(criterion='entropy',
-                                      max_depth=5)
+    clf = RandomForestClassifier(
+            n_estimators=12,
+            max_depth=7,
+            class_weight='balanced_subsample')
     clf.fit(X_train, y_train)
 
     # test on random holdout
@@ -93,15 +96,6 @@ def main():
                      sort_keys=True,
                      indent=4,
                      separators=(',', ': ')))
-
-
-    with open('tree.dot', 'w') as outfile:
-        feature_names = header[:header.index('renewed')] + \
-            header[header.index('renewed') + 1:]
-        tree.export_graphviz(clf,
-                             feature_names=feature_names,
-                             filled=True,
-                             out_file=outfile)
 
 if __name__ == '__main__':
     # setup numpy
